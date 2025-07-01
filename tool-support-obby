@@ -1,33 +1,6 @@
 local Players = game:GetService("Players")
 local plr = Players.LocalPlayer
 
--- Load whitelist from GitHub
-local success, whitelist = pcall(function()
-    return loadstring(game:HttpGet("https://raw.githubusercontent.com/c5least011/Vip/refs/heads/main/whitelist"))()
-end)
-
--- Check by UserId
-if not success or not whitelist[plr.UserId] then
-    local StarterGui = game:GetService("StarterGui")
-    for i = 1, 5 do
-        StarterGui:SetCore("SendNotification", {
-            Title = "ACCESS DENIED",
-            Text = "You're not allowed to use this script.\nUserId: " .. plr.UserId,
-            Duration = 1
-        })
-        task.wait(0.3)
-    end
-
-    for i = 1, 5 do
-        local exp = Instance.new("Explosion", plr.Character and plr.Character:FindFirstChild("HumanoidRootPart") or workspace)
-        exp.BlastPressure = 0
-        task.wait(0.1)
-    end
-
-    plr:Kick("You're not whitelisted to use this script. Bye!")
-    return
-end
-
 -- === GUI ANTI-FALL ===
 local char = plr.Character or plr.CharacterAdded:Wait()
 local hrp = char:WaitForChild("HumanoidRootPart")
