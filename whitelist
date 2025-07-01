@@ -1,4 +1,4 @@
 return {
-   ["c5least3"] = true,
+   ["C5least3"] = true,
    ["iphf6b"] = true
 }
