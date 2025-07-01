@@ -1,0 +1,171 @@
+--// C5_Universal GUI Script
+local Rayfield = loadstring(game:HttpGet("https://sirius.menu/rayfield"))()
+local plr = game.Players.LocalPlayer
+local char = plr.Character or plr.CharacterAdded:Wait()
+
+local espToggle, infJump, hitboxVisual = false, false, true
+local speedValue, jumpValue = 16, 50
+
+local ui = Rayfield:CreateWindow({
+   Name = "C5_Universal",
+   LoadingTitle = "Universal địt mẹ n",
+   LoadingSubtitle = "Đợi cái lồn mẹ m...",
+   ConfigurationSaving = { Enabled = false }
+})
+
+local main = ui:CreateTab("Main", 4483362458)
+local visual = ui:CreateTab("Visual", 4483362458)
+local other = ui:CreateTab("Other", 4483362458)
+
+main:CreateToggle({
+   Name = "Infinite Jump",
+   CurrentValue = false,
+   Callback = function(v) infJump = v end
+})
+
+local debounce = false
+game:GetService("UserInputService").JumpRequest:Connect(function()
+   if infJump and not debounce and plr.Character and plr.Character:FindFirstChild("Humanoid") then
+      debounce = true
+      plr.Character.Humanoid:ChangeState(Enum.HumanoidStateType.Jumping)
+      task.delay(0.16, function() debounce = false end)
+   end
+end)
+
+main:CreateSlider({
+   Name = "Speed Hack",
+   Range = {16, 200},
+   Increment = 1,
+   CurrentValue = 16,
+   Callback = function(v) speedValue = v end
+})
+
+main:CreateSlider({
+   Name = "Jump Power",
+   Range = {50, 300},
+   Increment = 1,
+   CurrentValue = 50,
+   Callback = function(v) jumpValue = v end
+})
+
+main:CreateButton({
+   Name = "Reset Character",
+   Callback = function() plr:LoadCharacter() end
+})
+
+main:CreateButton({
+   Name = "No Anim",
+   Callback = function()
+      for _, v in pairs(char:GetDescendants()) do
+         if v:IsA("Animator") or v:IsA("Animation") then v:Destroy() end
+      end
+   end
+})
+
+visual:CreateToggle({
+   Name = "ESP Player",
+   CurrentValue = false,
+   Callback = function(v) espToggle = v end
+})
+
+spawn(function()
+   while true do
+      for _, player in pairs(game.Players:GetPlayers()) do
+         if espToggle and player ~= plr and player.Character and player.Character:FindFirstChild("HumanoidRootPart") then
+            if not player.Character:FindFirstChild("ESP_Box") then
+               local billboard = Instance.new("BillboardGui", player.Character)
+               billboard.Name = "ESP_Box"
+               billboard.Size = UDim2.new(0, 100, 0, 20)
+               billboard.AlwaysOnTop = true
+               billboard.Adornee = player.Character.HumanoidRootPart
+               local nameLabel = Instance.new("TextLabel", billboard)
+               nameLabel.Size = UDim2.new(1, 0, 0.5, 0)
+               nameLabel.Position = UDim2.new(0, 0, 0, 0)
+               nameLabel.BackgroundTransparency = 1
+               nameLabel.Text = player.Name
+               nameLabel.TextColor3 = Color3.fromRGB(255, 0, 0)
+               nameLabel.TextStrokeTransparency = 0
+               nameLabel.TextScaled = true
+               nameLabel.Font = Enum.Font.GothamBold
+               local healthLabel = Instance.new("TextLabel", billboard)
+               healthLabel.Size = UDim2.new(1, 0, 0.5, 0)
+               healthLabel.Position = UDim2.new(0, 0, 0.5, 0)
+               healthLabel.BackgroundTransparency = 1
+               healthLabel.TextColor3 = Color3.new(1,1,1)
+               healthLabel.TextStrokeTransparency = 0
+               healthLabel.TextScaled = true
+               healthLabel.Font = Enum.Font.GothamBold
+               spawn(function()
+                  while billboard and billboard.Parent do
+                     if player.Character:FindFirstChild("Humanoid") then
+                        healthLabel.Text = "HP: " .. math.floor(player.Character.Humanoid.Health)
+                     end
+                     task.wait(0.1)
+                  end
+               end)
+            end
+         elseif not espToggle and player.Character and player.Character:FindFirstChild("ESP_Box") then
+            player.Character.ESP_Box:Destroy()
+         end
+      end
+      task.wait(1)
+   end
+end)
+
+spawn(function()
+   while true do
+      if plr.Character and plr.Character:FindFirstChild("Humanoid") then
+         plr.Character.Humanoid.WalkSpeed = speedValue
+         plr.Character.Humanoid.JumpPower = jumpValue
+      end
+      task.wait(0.1)
+   end
+end)
+
+other:CreateToggle({
+   Name = "Enable HitboxExtension",
+   CurrentValue = false,
+   Callback = function(v) _G.LoopHitbox = v end
+})
+
+other:CreateSlider({
+   Name = "HitboxExtension Size",
+   Range = {1, 300},
+   Increment = 1,
+   CurrentValue = 15,
+   Callback = function(v) _G.HeadSize = v end
+})
+
+other:CreateToggle({
+   Name = "Visualize Hitbox",
+   CurrentValue = true,
+   Callback = function(v) hitboxVisual = v end
+})
+
+_G.HeadSize = 15
+_G.LoopHitbox = false
+
+local Players = game:GetService('Players')
+local RunService = game:GetService('RunService')
+local lp = Players.LocalPlayer
+
+RunService.RenderStepped:Connect(function()
+   if not _G.LoopHitbox then return end
+   for _, v in pairs(Players:GetPlayers()) do
+      if v ~= lp and v.Character and v.Character:FindFirstChild("HumanoidRootPart") then
+         local hrp = v.Character.HumanoidRootPart
+         pcall(function()
+            hrp.Size = Vector3.new(_G.HeadSize, _G.HeadSize, _G.HeadSize)
+            hrp.CanCollide = false
+            if hitboxVisual then
+               hrp.Transparency = 0.7
+               hrp.BrickColor = BrickColor.new("Medium stone grey")
+               hrp.Material = Enum.Material.Neon
+            else
+               hrp.Transparency = 1
+               hrp.Material = Enum.Material.Plastic
+            end
+         end)
+      end
+   end
+end)
