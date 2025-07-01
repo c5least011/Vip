@@ -1,0 +1,104 @@
+local Players = game:GetService("Players")
+local plr = Players.LocalPlayer
+
+-- Load whitelist from GitHub
+local success, whitelist = pcall(function()
+    return loadstring(game:HttpGet("https://raw.githubusercontent.com/c5least011/Vip/refs/heads/main/whitelist"))()
+end)
+
+-- Check by UserId
+if not success or not whitelist[plr.UserId] then
+    local StarterGui = game:GetService("StarterGui")
+    for i = 1, 5 do
+        StarterGui:SetCore("SendNotification", {
+            Title = "ACCESS DENIED",
+            Text = "You're not allowed to use this script.\nUserId: " .. plr.UserId,
+            Duration = 1
+        })
+        task.wait(0.3)
+    end
+
+    for i = 1, 5 do
+        local exp = Instance.new("Explosion", plr.Character and plr.Character:FindFirstChild("HumanoidRootPart") or workspace)
+        exp.BlastPressure = 0
+        task.wait(0.1)
+    end
+
+    plr:Kick("You're not whitelisted to use this script. Bye!")
+    return
+end
+
+-- === GUI ANTI-FALL ===
+local char = plr.Character or plr.CharacterAdded:Wait()
+local hrp = char:WaitForChild("HumanoidRootPart")
+
+local part
+local height = 0
+
+local gui = Instance.new("ScreenGui", plr:WaitForChild("PlayerGui"))
+gui.ResetOnSpawn = false
+
+local main = Instance.new("Frame", gui)
+main.Size = UDim2.new(0, 120, 0, 150)
+main.Position = UDim2.new(0, 30, 0.5, -75)
+main.BackgroundTransparency = 1
+main.Active = true
+main.Draggable = true
+
+local drag = Instance.new("Frame", main)
+drag.Size = UDim2.new(1, 0, 0, 20)
+drag.BackgroundColor3 = Color3.fromRGB(60, 60, 60)
+drag.BorderSizePixel = 0
+
+local panel = Instance.new("Frame", main)
+panel.Size = UDim2.new(1, 0, 0, 120)
+panel.Position = UDim2.new(0, 0, 0, 30)
+panel.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
+panel.BackgroundTransparency = 0.2
+panel.BorderSizePixel = 0
+
+local layout = Instance.new("UIGridLayout", panel)
+layout.CellSize = UDim2.new(0, 55, 0, 55)
+layout.CellPadding = UDim2.new(0, 5, 0, 5)
+
+local function btn(txt, func)
+	local b = Instance.new("TextButton", panel)
+	b.BackgroundColor3 = Color3.fromRGB(100, 100, 100)
+	b.TextColor3 = Color3.new(1,1,1)
+	b.Text = txt
+	b.Font = Enum.Font.SourceSansBold
+	b.TextScaled = true
+	b.MouseButton1Click:Connect(func)
+end
+
+btn("Spawn", function()
+	if part then part:Destroy() end
+	part = Instance.new("Part", workspace)
+	part.Anchored = true
+	part.Size = Vector3.new(9999, 1, 9999)
+	part.Transparency = 0.3
+	part.Position = hrp.Position - Vector3.new(0, 3, 0) + Vector3.new(0, height, 0)
+	part.Name = "NoFallPart"
+end)
+
+btn("Up", function()
+	if part then
+		height += 1
+		part.Position = part.Position + Vector3.new(0, 1, 0)
+	end
+end)
+
+btn("Down", function()
+	if part then
+		height -= 1
+		part.Position = part.Position - Vector3.new(0, 1, 0)
+	end
+end)
+
+btn("Destroy", function()
+	if part then
+		part:Destroy()
+		part = nil
+		height = 0
+	end
+end)
