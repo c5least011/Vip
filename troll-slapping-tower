@@ -1,0 +1,346 @@
+local Rayfield = loadstring(game:HttpGet('https://sirius.menu/rayfield'))()
+local Players = game:GetService("Players")
+local LocalPlayer = Players.LocalPlayer
+local Backpack = LocalPlayer.Backpack
+
+local Window = Rayfield:CreateWindow({
+	Name = "C5_slasher",
+	LoadingTitle = "Loading...",
+	ConfigurationSaving = {
+		Enabled = false
+	}
+})
+
+local main = Window:CreateTab("Tool+buff+target")
+
+main:CreateButton({
+	Name = "Power buff",
+	Callback = function()
+		for _, v in pairs(Backpack:GetChildren()) do
+			if v:IsA("Tool") and v:FindFirstChild("Power") then
+				v.Power.Value = 100000000
+			end
+		end
+
+		Backpack.ChildAdded:Connect(function(tool)
+			if tool:IsA("Tool") and tool:FindFirstChild("Power") then
+				tool.Power.Value = 100000000
+			end
+		end)
+	end
+})
+
+main:CreateButton({
+	Name = "Select StunSlap (use when stun plr)",
+	Callback = function()
+		local args = {"StunSlap"}
+		game:GetService("ReplicatedStorage"):WaitForChild("EquipSlapEvent"):FireServer(unpack(args))
+	end
+})
+
+main:CreateButton({
+	Name = "Select God's Hand (use when kill plr)",
+	Callback = function()
+		local args = {"God's Hand"}
+		game:GetService("ReplicatedStorage"):WaitForChild("EquipSlapEvent"):FireServer(unpack(args))
+	end
+})
+
+main:CreateButton({
+	Name = "Select SwapperSlap (use when bring plr)",
+	Callback = function()
+		local args = {"SwapperSlap"}
+		game:GetService("ReplicatedStorage"):WaitForChild("EquipSlapEvent"):FireServer(unpack(args))
+	end
+})
+
+main:CreateButton({
+	Name = "Select GalaxySlap (use when trash sv)",
+	Callback = function()
+		local args = {"GalaxySlap"}
+		game:GetService("ReplicatedStorage"):WaitForChild("EquipSlapEvent"):FireServer(unpack(args))
+	end
+})
+
+local selectedName = ""
+main:CreateInput({
+	Name = "Target name(function in other tab)",
+	PlaceholderText = "Enter Player",
+	RemoveTextAfterFocusLost = false,
+	Callback = function(txt)
+		for _, plr in pairs(Players:GetPlayers()) do
+			if string.find(string.lower(plr.Name), string.lower(txt)) or string.find(string.lower(plr.DisplayName), string.lower(txt)) then
+				selectedName = plr.Name
+				Rayfield:Notify({
+					Title = "Found",
+					Content = "Target: "..plr.Name,
+					Duration = 3
+				})
+				break
+			end
+		end
+	end
+})
+
+local beta = Window:CreateTab("Beta function", 4483362458)
+
+beta:CreateToggle({
+	Name = "Reduce Slash power(anti-slash)[BETA]",
+	CurrentValue = false,
+	Callback = function(v)
+		_G.godmode = v
+		local plr = Players.LocalPlayer
+		local lastPos = nil
+
+		local function trackPos(char)
+			local hrp = char:FindFirstChild("HumanoidRootPart")
+			if hrp then lastPos = hrp.CFrame end
+		end
+
+		task.spawn(function()
+			while _G.godmode do
+				task.wait()
+				local char = plr.Character
+				if not char then continue end
+				local hum = char:FindFirstChildOfClass("Humanoid")
+				local hrp = char:FindFirstChild("HumanoidRootPart")
+				if hum and hrp then
+					if hrp.Velocity.Magnitude < 10 then
+						trackPos(char)
+					end
+
+					local s = hum:GetState()
+					if s == Enum.HumanoidStateType.Ragdoll or s == Enum.HumanoidStateType.FallingDown or s == Enum.HumanoidStateType.Physics then
+						hum:ChangeState(Enum.HumanoidStateType.GettingUp)
+					end
+
+					if hum:GetState() ~= Enum.HumanoidStateType.Jumping and hum:GetState() ~= Enum.HumanoidStateType.Freefall then
+						hum:ChangeState(Enum.HumanoidStateType.Running)
+					end
+
+					for _,o in pairs(char:GetDescendants()) do
+						if o:IsA("BodyVelocity") or o:IsA("BodyAngularVelocity") or o:IsA("BodyPosition") or o:IsA("BodyGyro") then
+							o:Destroy()
+						end
+					end
+
+					if hrp.Velocity.Magnitude > 50 then
+						hrp.CFrame = lastPos or hrp.CFrame
+						hrp.Velocity = Vector3.zero
+					else
+						hrp.Velocity = Vector3.new(hrp.Velocity.X*0.9, hrp.Velocity.Y, hrp.Velocity.Z*0.9)
+					end
+				end
+			end
+		end)
+	end
+})
+
+beta:CreateButton({
+	Name = "Bring Player[BETA]",
+	Callback = function()
+		local plr = Players:FindFirstChild(selectedName)
+		if plr and plr.Character then
+			local hrp = LocalPlayer.Character:WaitForChild("HumanoidRootPart")
+			local targetHrp = plr.Character:WaitForChild("HumanoidRootPart")
+			local pos2 = targetHrp.Position
+			local pos = hrp.Position
+			local args = {"swap", pos, pos2, plr}
+			Backpack:WaitForChild("SwapperSlap"):WaitForChild("Event"):FireServer(unpack(args))
+			task.delay(1, function()
+				if hrp then
+					hrp.CFrame = CFrame.new(pos)
+				end
+			end)
+		end
+	end
+})
+
+-- Đổi chỗ này từ newTab thành beta hoặc kill
+beta:CreateButton({
+	Name = "Bring All[BETA]",
+	Callback = function()
+		for _, plr in pairs(Players:GetPlayers()) do
+			if plr ~= LocalPlayer and plr.Character then
+				local hrp = LocalPlayer.Character:WaitForChild("HumanoidRootPart")
+				local targetHrp = plr.Character:WaitForChild("HumanoidRootPart")
+				local pos2 = targetHrp.Position
+				local pos = hrp.Position
+				local args = {"swap", pos, pos2, plr}
+				Backpack:WaitForChild("SwapperSlap"):WaitForChild("Event"):FireServer(unpack(args))
+				task.delay(1, function()
+					if hrp then
+						hrp.CFrame = CFrame.new(pos)
+					end
+				end)
+			end
+		end
+	end
+})
+
+local kill = Window:CreateTab("Kill function", 4483362458)
+
+kill:CreateButton({
+	Name = "Kill target",
+	Callback = function()
+		local plr = Players:FindFirstChild(selectedName)
+		if plr and plr.Character then
+			local args = {
+				"slash",
+				plr.Character,
+				Vector3.new(0,0,0)
+			}
+			Backpack:WaitForChild("God's Hand"):WaitForChild("Event"):FireServer(unpack(args))
+		end
+	end
+})
+
+kill:CreateButton({
+	Name = "Force Kill target",
+	Callback = function()
+		local plr = Players:FindFirstChild(selectedName)
+		if plr and plr.Character then
+			local args = {
+				"slash",
+				plr.Character,
+				Vector3.new(0,-99999999999999,0)
+			}
+			Backpack:WaitForChild("God's Hand"):WaitForChild("Event"):FireServer(unpack(args))
+		end
+	end
+})
+
+kill:CreateButton({
+	Name = "Kill all",
+	Callback = function()
+		for _, plr in pairs(Players:GetPlayers()) do
+			if plr ~= LocalPlayer and plr.Character then
+				local args = {
+					"slash",
+					plr.Character,
+					Vector3.new(0,0,0)
+				}
+				Backpack:WaitForChild("God's Hand"):WaitForChild("Event"):FireServer(unpack(args))
+			end
+		end
+	end
+})
+
+kill:CreateButton({
+	Name = "Force Kill all",
+	Callback = function()
+		for _, plr in pairs(Players:GetPlayers()) do
+			if plr ~= LocalPlayer and plr.Character then
+				local args = {
+					"slash",
+					plr.Character,
+					Vector3.new(0,-99999999999999,0)
+				}
+				Backpack:WaitForChild("God's Hand"):WaitForChild("Event"):FireServer(unpack(args))
+			end
+		end
+	end
+})
+
+kill:CreateButton({
+	Name = "GP Pause Target",
+	Callback = function()
+		local plr = Players:FindFirstChild(selectedName)
+		if plr and plr.Character then
+			local args = {
+				"slash",
+				plr.Character,
+				Vector3.new(0,math.huge,0)
+			}
+			Backpack:WaitForChild("God's Hand"):WaitForChild("Event"):FireServer(unpack(args))
+		end
+	end
+})
+
+kill:CreateButton({
+	Name = "GP Pause All",
+	Callback = function()
+		for _, plr in pairs(Players:GetPlayers()) do
+			if plr ~= LocalPlayer and plr.Character then
+				local args = {
+					"slash",
+					plr.Character,
+					Vector3.new(0,math.huge,0)
+				}
+				Backpack:WaitForChild("God's Hand"):WaitForChild("Event"):FireServer(unpack(args))
+			end
+		end
+	end
+})
+
+local troll = Window:CreateTab("Troll function", 4483362458)
+local toggleBlackhole = false
+
+troll:CreateToggle({
+	Name = "Loop BlackholeEvent",
+	CurrentValue = false,
+	Callback = function(v)
+		toggleBlackhole = v
+		task.spawn(function()
+			while toggleBlackhole do
+				pcall(function()
+					local char = game:GetService("Players").LocalPlayer.Character
+					local tool = char:FindFirstChild("GalaxySlap")
+					if tool then
+						tool:WaitForChild("BlackholeEvent"):FireServer()
+					end
+				end)
+				task.wait()
+			end
+		end)
+	end
+})
+local toggleStun = false
+
+troll:CreateToggle({
+	Name = "Loop StunBallEvent",
+	CurrentValue = false,
+	Callback = function(v)
+		toggleStun = v
+		task.spawn(function()
+			while toggleStun do
+				pcall(function()
+					local char = game:GetService("Players").LocalPlayer.Character
+					local tool = char:FindFirstChild("StunSlap")
+					if tool then
+						local args = {"stunball"}
+						tool:WaitForChild("Event"):FireServer(unpack(args))
+					end
+				end)
+				task.wait()
+			end
+		end)
+	end
+})
+local bringAll = false
+
+troll:CreateToggle({
+	Name = "Spam Bring All",
+	CurrentValue = false,
+	Callback = function(v)
+		bringAll = v
+		task.spawn(function()
+			while bringAll do
+				for _, plr in pairs(Players:GetPlayers()) do
+					if plr ~= LocalPlayer and plr.Character then
+						local hrp = LocalPlayer.Character:FindFirstChild("HumanoidRootPart")
+						local targetHrp = plr.Character:FindFirstChild("HumanoidRootPart")
+						if hrp and targetHrp then
+							local pos2 = targetHrp.Position
+							local pos = hrp.Position
+							local args = {"swap", pos, pos2, plr}
+							Backpack:FindFirstChild("SwapperSlap"):FindFirstChild("Event"):FireServer(unpack(args))
+							task.wait(0.2)
+						end
+					end
+				end
+				task.wait()
+			end
+		end)
+	end
+});
