@@ -126,11 +126,6 @@ visual:CreateToggle({
 	end
 })
 
-local Drawing = Drawing
-local cam = workspace.CurrentCamera
-local lp = game.Players.LocalPlayer
-local rs = game:GetService("RunService")
-local espOn = false
 local lines = {}
 
 function createESP()
