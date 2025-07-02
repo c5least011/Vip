@@ -73,7 +73,7 @@ function createESP()
 	for _, v in pairs(game.Players:GetPlayers()) do
 		if v ~= lp and not lines[v] then
 			local line = Drawing.new("Line")
-			line.Thickness = 1.5
+			line.Thickness = 2.5
 			line.Color = Color3.fromRGB(255, 0, 0)
 			line.Transparency = 1
 			lines[v] = line
@@ -94,30 +94,29 @@ rs.RenderStepped:Connect(function()
 	for v, line in pairs(lines) do
 		local char = v.Character
 		if char and char:FindFirstChild("HumanoidRootPart") then
-			local pos, onScreen = cam:WorldToViewportPoint(char.HumanoidRootPart.Position)
+			local worldPos = char.HumanoidRootPart.Position
+			local screenPos = cam:WorldToViewportPoint(worldPos)
 			local center = Vector2.new(cam.ViewportSize.X / 2, cam.ViewportSize.Y / 2)
-			if onScreen then
-				line.From = center
-				line.To = Vector2.new(pos.X, pos.Y)
-				line.Visible = true
-			else
-				line.Visible = false
-			end
+
+			line.From = center
+			line.To = Vector2.new(screenPos.X, screenPos.Y)
+			line.Visible = true
 		else
 			line.Visible = false
 		end
 	end
 end)
 
--- ⚠️ CHỖ NÀY LÀ TAB VISUAL
+-- ✅ ĐÂY LÀ CÁI M MUỐN (trong tab 'visual')
 visual:CreateToggle({
-	Name = "ESP Line",
+	Name = "ESP Line (Full FOV)",
 	CurrentValue = false,
 	Callback = function(v)
 		espOn = v
 		if not v then clearESP() end
 	end
 })
+
 visual:CreateToggle({
    Name = "ESP Player",
    CurrentValue = false,
