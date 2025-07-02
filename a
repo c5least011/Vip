@@ -66,6 +66,70 @@ local Drawing = Drawing
 local cam = workspace.CurrentCamera
 local lp = game.Players.LocalPlayer
 local rs = game:GetService("RunService")
+local espBoxOn = false
+local boxes = {}
+
+function createBox(v)
+	local box = Drawing.new("Square")
+	box.Thickness = 1.5
+	box.Transparency = 1
+	box.Color = Color3.fromRGB(0, 255, 0)
+	box.Filled = false
+	box.Visible = true
+	boxes[v] = box
+end
+
+function clearBoxes()
+	for _, b in pairs(boxes) do
+		b:Remove()
+	end
+	table.clear(boxes)
+end
+
+rs.RenderStepped:Connect(function()
+	if not espBoxOn then return end
+	for _, v in pairs(game.Players:GetPlayers()) do
+		if v ~= lp and v.Character and v.Character:FindFirstChild("HumanoidRootPart") then
+			if not boxes[v] then createBox(v) end
+			local hrp = v.Character.HumanoidRootPart
+			local size = Vector3.new(4, 6, 0)
+			local corners = {
+				cam:WorldToViewportPoint(hrp.Position + Vector3.new(-size.X,  size.Y, 0)),
+				cam:WorldToViewportPoint(hrp.Position + Vector3.new( size.X,  size.Y, 0)),
+				cam:WorldToViewportPoint(hrp.Position + Vector3.new(-size.X, -size.Y, 0)),
+				cam:WorldToViewportPoint(hrp.Position + Vector3.new( size.X, -size.Y, 0)),
+			}
+			local minX, maxX = math.huge, -math.huge
+			local minY, maxY = math.huge, -math.huge
+			for _, point in ipairs(corners) do
+				minX = math.min(minX, point.X)
+				maxX = math.max(maxX, point.X)
+				minY = math.min(minY, point.Y)
+				maxY = math.max(maxY, point.Y)
+			end
+			local box = boxes[v]
+			box.Position = Vector2.new(minX, minY)
+			box.Size = Vector2.new(maxX - minX, maxY - minY)
+			box.Visible = true
+		elseif boxes[v] then
+			boxes[v].Visible = false
+		end
+	end
+end)
+
+visual:CreateToggle({
+	Name = "ESP Box",
+	CurrentValue = false,
+	Callback = function(v)
+		espBoxOn = v
+		if not v then clearBoxes() end
+	end
+})
+
+local Drawing = Drawing
+local cam = workspace.CurrentCamera
+local lp = game.Players.LocalPlayer
+local rs = game:GetService("RunService")
 local espOn = false
 local lines = {}
 
