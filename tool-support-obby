@@ -1,10 +1,6 @@
 local Players = game:GetService("Players")
 local plr = Players.LocalPlayer
 
--- === GUI ANTI-FALL ===
-local char = plr.Character or plr.CharacterAdded:Wait()
-local hrp = char:WaitForChild("HumanoidRootPart")
-
 local part
 local height = 0
 
@@ -34,6 +30,19 @@ local layout = Instance.new("UIGridLayout", panel)
 layout.CellSize = UDim2.new(0, 55, 0, 55)
 layout.CellPadding = UDim2.new(0, 5, 0, 5)
 
+local hrp
+
+local function updateHRP()
+	local char = plr.Character or plr.CharacterAdded:Wait()
+	hrp = char:WaitForChild("HumanoidRootPart")
+end
+
+updateHRP()
+plr.CharacterAdded:Connect(function()
+	wait(0.1)
+	updateHRP()
+end)
+
 local function btn(txt, func)
 	local b = Instance.new("TextButton", panel)
 	b.BackgroundColor3 = Color3.fromRGB(100, 100, 100)
@@ -46,6 +55,7 @@ end
 
 btn("Spawn", function()
 	if part then part:Destroy() end
+	if not hrp then updateHRP() end
 	part = Instance.new("Part", workspace)
 	part.Anchored = true
 	part.Size = Vector3.new(9999, 1, 9999)
