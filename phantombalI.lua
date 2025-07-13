@@ -1,6 +1,7 @@
 local Players = game:GetService("Players")    
 local TweenService = game:GetService("TweenService")    
 local VIM = game:GetService("VirtualInputManager")    
+local UIS = game:GetService("UserInputService")
 local lp = Players.LocalPlayer    
     
 local Rayfield = loadstring(game:HttpGet("https://sirius.menu/rayfield"))()    
@@ -65,7 +66,7 @@ MainTab:CreateButton({
 	end    
 })    
     
--- GUI Click Key    
+-- Block UI (Click to Block)
 local ScreenGui = Instance.new("ScreenGui", game:GetService("CoreGui"))    
 ScreenGui.Name = "ForceE_UI"    
 ScreenGui.Enabled = false    
@@ -98,9 +99,9 @@ MainTab:CreateToggle({
 	Callback = function(v) ScreenGui.Enabled = v end    
 })    
     
--- Spam Key    
+-- Spam Block Auto (basic)
 task.spawn(function()    
-	while task.wait(0.001) do    
+	while task.wait(0.01) do    
 		if spamE then    
 			VIM:SendKeyEvent(true, pressKey, false, game)    
 			task.wait(0.05)    
@@ -178,7 +179,7 @@ task.spawn(function()
 	end  
 end)  
   
--- Keybinds  
+-- Keybind Tab  
 KeyTab:CreateButton({    
 	Name = "Click F",    
 	Callback = function()    
@@ -192,3 +193,67 @@ KeyTab:CreateButton({
 		pressKey = Enum.KeyCode.E    
 	end    
 })
+
+-- Manual Spam UI (Drag, Toggle)
+local SpamGui = Instance.new("ScreenGui", game:GetService("CoreGui"))
+SpamGui.Name = "ManualSpamUI"
+SpamGui.ResetOnSpawn = false
+
+local dragBtn = Instance.new("TextButton", SpamGui)
+dragBtn.Size = UDim2.new(0, 120, 0, 40)
+dragBtn.Position = UDim2.new(0.5, -60, 0.8, 0)
+dragBtn.BackgroundColor3 = Color3.fromRGB(80, 80, 255)
+dragBtn.TextColor3 = Color3.new(1, 1, 1)
+dragBtn.Font = Enum.Font.GothamBold
+dragBtn.TextSize = 14
+dragBtn.Text = "Spam: OFF"
+dragBtn.Active = true
+dragBtn.AutoButtonColor = true
+
+local dragging, dragInput, dragStart, startPos
+local function update(input)
+	local delta = input.Position - dragStart
+	dragBtn.Position = UDim2.new(startPos.X.Scale, startPos.X.Offset + delta.X, startPos.Y.Scale, startPos.Y.Offset + delta.Y)
+end
+
+dragBtn.InputBegan:Connect(function(input)
+	if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+		dragging = true
+		dragStart = input.Position
+		startPos = dragBtn.Position
+		input.Changed:Connect(function()
+			if input.UserInputState == Enum.UserInputState.End then
+				dragging = false
+			end
+		end)
+	end
+end)
+
+dragBtn.InputChanged:Connect(function(input)
+	if input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch then
+		dragInput = input
+	end
+end)
+
+UIS.InputChanged:Connect(function(input)
+	if input == dragInput and dragging then
+		update(input)
+	end
+end)
+
+local isSpammingManual = false
+dragBtn.MouseButton1Click:Connect(function()
+	isSpammingManual = not isSpammingManual
+	dragBtn.Text = isSpammingManual and "Spam: ON" or "Spam: OFF"
+	dragBtn.BackgroundColor3 = isSpammingManual and Color3.fromRGB(255, 80, 80) or Color3.fromRGB(80, 80, 255)
+end)
+
+task.spawn(function()
+	while task.wait(0.01) do
+		if isSpammingManual then
+			VIM:SendKeyEvent(true, pressKey, false, game)
+			task.wait(0.05)
+			VIM:SendKeyEvent(false, pressKey, false, game)
+		end
+	end
+end)
