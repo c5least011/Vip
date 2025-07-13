@@ -150,32 +150,70 @@ RunService.Heartbeat:Connect(function()
 	end
 end)
 
--- Heartbeat Follow Ball
+-- Death detect
+local deathFlag = false
+local deathTime = 0
+
+for _, plr in pairs(Players:GetPlayers()) do
+	plr.CharacterAdded:Connect(function(char)
+		local hum = char:WaitForChild("Humanoid", 3)
+		if hum then
+			hum.Died:Connect(function()
+				deathFlag = true
+				deathTime = tick()
+			end)
+		end
+	end)
+end
+
+-- Heartbeat Follow Ball (fixed)
 RunService.Heartbeat:Connect(function()
 	if not flying then return end
 	if tick() - lastParry < 0.03 then return end
+
 	local char = lp.Character
 	if not char or not char:FindFirstChild("HumanoidRootPart") then return end
 	local hrp = char.HumanoidRootPart
 	local ball = workspace:FindFirstChild("GameBall")
 	if not ball then return end
+
 	local color = ball.Color
 	if not originalColor then originalColor = color end
+
 	if color ~= originalColor and not changed then
-		changed = true
-		lastParry = tick()
-		game.StarterGui:SetCore("SendNotification", {
-			Title = "Ball Detect",
-			Text = "Fly + Click",
-			Duration = 1
-		})
-		VIM:SendKeyEvent(true, pressKey, false, game)
-		task.wait(0.05)
-		VIM:SendKeyEvent(false, pressKey, false, game)
+		if deathFlag and tick() - deathTime <= 2 then
+			changed = true
+			lastParry = tick()
+			deathFlag = false
+			game.StarterGui:SetCore("SendNotification", {
+				Title = "Ball Detect (after death)",
+				Text = "Fly + Delay Click (0.7s)",
+				Duration = 1
+			})
+			task.delay(0.7, function()
+				if not flying then return end
+				VIM:SendKeyEvent(true, pressKey, false, game)
+				task.wait(0.05)
+				VIM:SendKeyEvent(false, pressKey, false, game)
+			end)
+		else
+			changed = true
+			lastParry = tick()
+			VIM:SendKeyEvent(true, pressKey, false, game)
+			task.wait(0.05)
+			VIM:SendKeyEvent(false, pressKey, false, game)
+			game.StarterGui:SetCore("SendNotification", {
+				Title = "Ball Detect",
+				Text = "Fly + Click",
+				Duration = 1
+			})
+		end
 	end
+
 	if color == originalColor and changed then
 		changed = false
 	end
+
 	local radius = changed and 20 or 50
 	angle += math.rad(10)
 	local x = math.cos(angle) * radius
