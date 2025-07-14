@@ -29,7 +29,37 @@ local pressKey = Enum.KeyCode.F
 MainTab:CreateToggle({ Name = "Follow Ball", CurrentValue = false, Callback = function(v) flying = v end })    
 MainTab:CreateToggle({ Name = "Spam Block", CurrentValue = false, Callback = function(v) spamE = v end })    
 MainTab:CreateToggle({ Name = "TP Ball", CurrentValue = false, Callback = function(v) tpBall = v end })    
-    
+
+-- Safe Zone sh!t
+local safePos = Vector3.new(-550.94287109375, 254.33348083496094, -125.77019500732422)
+local safeBlock = nil
+local safeMode = false
+
+MainTab:CreateToggle({
+	Name = "Safe Zone (Don't Move)",
+	CurrentValue = false,
+	Callback = function(v)
+		safeMode = v
+		if v then
+			local char = lp.Character
+			if char and char:FindFirstChild("HumanoidRootPart") then
+				local hrp = char.HumanoidRootPart
+				hrp.CFrame = CFrame.new(safePos)
+				if not safeBlock then
+					safeBlock = Instance.new("Part", workspace)
+					safeBlock.Anchored = true
+					safeBlock.CanCollide = true
+					safeBlock.Transparency = 1
+					safeBlock.Size = Vector3.new(10, 1, 10)
+					safeBlock.Position = safePos - Vector3.new(0, 3, 0)
+				end
+			end
+		else
+			if safeBlock then safeBlock:Destroy() safeBlock = nil end
+		end
+	end
+})
+
 MainTab:CreateButton({
 	Name = "Tween to Play Area",
 	Callback = function()
@@ -53,7 +83,6 @@ MainTab:CreateButton({
 	end
 })
 
--- Block UI (Click to Block)
 local ScreenGui = Instance.new("ScreenGui", game:GetService("CoreGui"))    
 ScreenGui.Name = "ForceE_UI"    
 ScreenGui.Enabled = false    
@@ -78,7 +107,6 @@ end)
     
 MainTab:CreateToggle({ Name = "Show Block Ui", CurrentValue = false, Callback = function(v) ScreenGui.Enabled = v end })
 
--- Manual Spam UI (Drag, Toggle)
 local SpamGui = Instance.new("ScreenGui", game:GetService("CoreGui"))
 SpamGui.Name = "ManualSpamUI"
 SpamGui.ResetOnSpawn = false
@@ -120,9 +148,7 @@ dragBtn.InputChanged:Connect(function(input)
 end)
 
 UIS.InputChanged:Connect(function(input)
-	if input == dragInput and dragging then
-		update(input)
-	end
+	if input == dragInput and dragging then update(input) end
 end)
 
 local isSpammingManual = false
@@ -132,7 +158,6 @@ dragBtn.MouseButton1Click:Connect(function()
 	dragBtn.BackgroundColor3 = isSpammingManual and Color3.fromRGB(255, 80, 80) or Color3.fromRGB(80, 80, 255)
 end)
 
--- Heartbeat Spam Manual
 RunService.Heartbeat:Connect(function()
 	if isSpammingManual then
 		VIM:SendKeyEvent(true, pressKey, false, game)
@@ -141,7 +166,6 @@ RunService.Heartbeat:Connect(function()
 	end
 end)
 
--- Heartbeat SpamE
 RunService.Heartbeat:Connect(function()
 	if spamE then
 		VIM:SendKeyEvent(true, pressKey, false, game)
@@ -150,7 +174,6 @@ RunService.Heartbeat:Connect(function()
 	end
 end)
 
--- Death detect
 local deathFlag = false
 local deathTime = 0
 
@@ -166,30 +189,21 @@ for _, plr in pairs(Players:GetPlayers()) do
 	end)
 end
 
--- Heartbeat Follow Ball (fixed)
 RunService.Heartbeat:Connect(function()
 	if not flying then return end
 	if tick() - lastParry < 0.03 then return end
-
 	local char = lp.Character
 	if not char or not char:FindFirstChild("HumanoidRootPart") then return end
 	local hrp = char.HumanoidRootPart
 	local ball = workspace:FindFirstChild("GameBall")
 	if not ball then return end
-
 	local color = ball.Color
 	if not originalColor then originalColor = color end
-
 	if color ~= originalColor and not changed then
 		if deathFlag and tick() - deathTime <= 2 then
 			changed = true
 			lastParry = tick()
 			deathFlag = false
-			game.StarterGui:SetCore("SendNotification", {
-				Title = "Ball Detect (after death)",
-				Text = "Fly + Delay Click (0.7s)",
-				Duration = 1
-			})
 			task.delay(0.7, function()
 				if not flying then return end
 				VIM:SendKeyEvent(true, pressKey, false, game)
@@ -202,18 +216,9 @@ RunService.Heartbeat:Connect(function()
 			VIM:SendKeyEvent(true, pressKey, false, game)
 			task.wait(0.05)
 			VIM:SendKeyEvent(false, pressKey, false, game)
-			game.StarterGui:SetCore("SendNotification", {
-				Title = "Ball Detect",
-				Text = "Fly + Click",
-				Duration = 1
-			})
 		end
 	end
-
-	if color == originalColor and changed then
-		changed = false
-	end
-
+	if color == originalColor and changed then changed = false end
 	local radius = changed and 20 or 50
 	angle += math.rad(10)
 	local x = math.cos(angle) * radius
@@ -224,7 +229,6 @@ RunService.Heartbeat:Connect(function()
 	TweenService:Create(hrp, TweenInfo.new(0.01, Enum.EasingStyle.Linear), { Position = targetPos }):Play()
 end)
 
--- Heartbeat TP Ball
 RunService.Heartbeat:Connect(function()
 	if not tpBall then return end
 	if tick() - lastParry < 0.03 then return end
@@ -238,11 +242,6 @@ RunService.Heartbeat:Connect(function()
 	if color ~= originalColor then
 		lastParry = tick()
 		originalColor = color
-		game.StarterGui:SetCore("SendNotification", {
-			Title = "TP Ball",
-			Text = "Ball changed! TP + Click!",
-			Duration = 1
-		})
 		VIM:SendKeyEvent(true, pressKey, false, game)
 		VIM:SendKeyEvent(false, pressKey, false, game)
 		local dir = (hrp.Position - ball.Position).Unit
@@ -251,6 +250,34 @@ RunService.Heartbeat:Connect(function()
 	end
 end)
 
--- Keybinds
+RunService.Heartbeat:Connect(function()
+	if not safeMode then return end
+	if tick() - lastParry < 0.03 then return end
+	local char = lp.Character
+	if not char or not char:FindFirstChild("HumanoidRootPart") then return end
+	local hrp = char.HumanoidRootPart
+	local ball = workspace:FindFirstChild("GameBall")
+	if not ball then return end
+	local color = ball.Color
+	if not originalColor then originalColor = color end
+	if color ~= originalColor then
+		lastParry = tick()
+		local oldPos = hrp.Position
+		originalColor = color
+		local targetPos = ball.Position + (hrp.Position - ball.Position).Unit * 6
+		local delayTime = (deathFlag and tick() - deathTime <= 2) and 0.7 or 0
+		deathFlag = false
+		task.delay(delayTime, function()
+			if not safeMode then return end
+			hrp.CFrame = CFrame.new(targetPos)
+			VIM:SendKeyEvent(true, pressKey, false, game)
+			task.wait(0.05)
+			VIM:SendKeyEvent(false, pressKey, false, game)
+			task.wait(0.1)
+			if safeMode then hrp.CFrame = CFrame.new(oldPos) end
+		end)
+	end
+end)
+
 KeyTab:CreateButton({ Name = "Click F", Callback = function() pressKey = Enum.KeyCode.F end })
 KeyTab:CreateButton({ Name = "Click E", Callback = function() pressKey = Enum.KeyCode.E end })
