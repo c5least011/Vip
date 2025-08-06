@@ -153,13 +153,13 @@ UserInputService.InputBegan:Connect(function(input, gpe)
 end)
 
 local Window = Rayfield:CreateWindow({
-	Name = "AutoParry + SafeDistance",
-	LoadingTitle = "Loaded",
-	LoadingSubtitle = "Phantomball auto parry",
+	Name = "PhantomBall AutoParry",
+	LoadingTitle = "By C5least",
+	LoadingSubtitle = "AutoParry [BETA]",
 	ConfigurationSaving = {
 		Enabled = true,
-		FolderName = "AutoParryConfigs",
-		FileName = "config"
+		FolderName = "C5_PhantomBall",
+		FileName = "Phantomball.c5"
 	}
 })
 
@@ -178,7 +178,7 @@ MainTab:CreateToggle({
 })
 
 MainTab:CreateToggle({
-	Name = "Safe Distance (50 stud)",
+	Name = "Safe Distance with other players(anticlash) (50 stud)[BETA]",
 	CurrentValue = false,
 	Flag = "SafeDistanceToggle",
 	Callback = function(val)
@@ -190,7 +190,7 @@ MainTab:CreateToggle({
 })
 
 MainTab:CreateButton({
-	Name = "Reset Distance(must use when start game)",
+	Name = "Reset Distance(must use when start a game)",
 	Callback = function()
 		resetDistance()
 	end
